@@ -15,6 +15,13 @@ validator:
 terminology:
   server: "https://tx.fhir.org"
   cacheDir: ".cache/txcache"
+  # tx.fhir.org times out now and then. A group whose validator run fails
+  # because the server is unreachable is retried this many times ...
+  retries: 2
+  # ... and then validated once more with "-tx n/a". Such a run is marked
+  # in results.json, the PR comment and the site: no LOINC, SNOMED CT or
+  # UCUM checks took place, so it reports fewer findings than usual.
+  fallbackToOffline: true
 
 defaultFhirVersion: "4.0.1"
 

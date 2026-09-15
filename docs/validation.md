@@ -132,6 +132,17 @@ Validation *errors*, by contrast, exit 0 and never fail a job.
 CI keeps across runs. `--offline` passes `-tx n/a`; the run then completes but
 codes cannot be checked and the results are not comparable with an online run.
 
+The server times out now and then. When a validator run fails only because the
+server did not answer (the log says *Unable to connect to terminology server*),
+the group is retried `terminology.retries` times and, if that does not help and
+`terminology.fallbackToOffline` is set, validated once more with `-tx n/a`. Such
+a run is marked everywhere: `terminologyFallback` in `results.json`, a warning in
+the pull request comment and the job summary, and a banner on the site. It
+reports fewer findings than usual because no LOINC, SNOMED CT or UCUM code was
+checked. The logs of the failed attempts stay next to the final one as
+`results/raw/group-<n>.attempt-<k>.log`. Every other kind of crash is reported
+as a crash and is not retried.
+
 Because terminology servers change independently of this repository, `main` is
 revalidated weekly. A finding that appears without a commit is terminology
 drift, and `results.json` records the validator version, jar SHA, IG versions,

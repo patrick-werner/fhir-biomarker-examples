@@ -188,6 +188,12 @@ def _footer(run: RunResult, baseline: RunResult | None) -> list[str]:
     if baseline is not None:
         generated = (baseline.generatedAt or "").split("T")[0] or "an earlier run"
         lines.append(f"> Baseline: results from main, {generated}.")
+    if run.terminologyFallback:
+        lines.append(
+            "> ⚠️ The terminology server was unreachable, so this run validated **without "
+            "terminology services** (no LOINC, SNOMED CT or UCUM checks). Expect fewer findings "
+            "than usual; a later run with a reachable server may report more."
+        )
     if run.crashed:
         lines.append(
             "> ⚠️ The validator crashed for at least one group; the affected files are reported "
@@ -279,6 +285,12 @@ def render_job_summary(cfg: Config, run: RunResult, delta: dict[str, dict[str, A
     for status in STATUS_ORDER:
         lines.append(f"| {status_cell(status)} | {totals.get(status, 0)} |")
     lines.append("")
+    if run.terminologyFallback:
+        lines.append(
+            "> ⚠️ Terminology server unreachable: validated without terminology services "
+            "(no LOINC, SNOMED CT or UCUM checks), so fewer findings than usual."
+        )
+        lines.append("")
     lines.extend(_summary_table(run, delta))
     for group in run.groups:
         if group.crashed:

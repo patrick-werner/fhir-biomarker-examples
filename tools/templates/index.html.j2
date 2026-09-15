@@ -6,6 +6,14 @@
   Real-world and synthetic representations of biomarkers in FHIR, validated
   automatically so that you can see what each example actually is.
 </p>
+{% if run.terminologyFallback %}
+<div class="warning-box">
+  <strong>Terminology checks were skipped in this run.</strong> The terminology
+  server was unreachable, so the validator ran without terminology services:
+  no LOINC, SNOMED CT or UCUM codes were checked and fewer findings than usual
+  are shown. The next scheduled run with a reachable server replaces this one.
+</div>
+{% endif %}
 
 <ul class="totals">
   {% for status in statuses %}

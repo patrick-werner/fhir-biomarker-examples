@@ -45,6 +45,10 @@ class ValidatorConfig:
 class TerminologyConfig:
     server: str
     cacheDir: str
+    # Extra attempts when the validator cannot reach the server.
+    retries: int = 2
+    # After the retries, run once more with -tx n/a and mark the run.
+    fallbackToOffline: bool = True
 
 
 @dataclass(frozen=True)
@@ -152,10 +156,12 @@ def load_config(root: Path | None = None) -> Config:
     )
 
     t = _expect(data.get("terminology"), "terminology")
-    _unknown_keys(t, ["server", "cacheDir"], "terminology")
+    _unknown_keys(t, ["server", "cacheDir", "retries", "fallbackToOffline"], "terminology")
     terminology = TerminologyConfig(
         server=str(t.get("server", "https://tx.fhir.org")),
         cacheDir=str(t.get("cacheDir", ".cache/txcache")),
+        retries=int(t.get("retries", 2)),
+        fallbackToOffline=bool(t.get("fallbackToOffline", True)),
     )
 
     default_fhir_version = str(data.get("defaultFhirVersion", "4.0.1"))

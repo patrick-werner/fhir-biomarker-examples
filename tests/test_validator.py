@@ -155,3 +155,124 @@ def test_tail_returns_the_last_lines(tmp_path: Path):
     log.write_text("\n".join(str(n) for n in range(100)), encoding="utf-8")
     assert tail(log, 5) == ["95", "96", "97", "98", "99"]
     assert tail(tmp_path / "missing.txt", 5) == []
+
+
+# ------------------------------------------------------------ terminology retries
+
+
+def test_terminology_failure_detection(tmp_path: Path):
+    from tools.validator import terminology_failure
+
+    log = tmp_path / "group-1.log"
+    assert terminology_failure(log) is False  # no log at all
+    log.write_text("Loading\n  Loading FHIR v4.0.1\n", encoding="utf-8")
+    assert terminology_failure(log) is False
+    log.write_text(
+        "org.hl7.fhir.exceptions.FHIRException: Unable to connect to terminology server "
+        "at https://tx.fhir.org. Use parameter '-tx n/a' ...\n",
+        encoding="utf-8",
+    )
+    assert terminology_failure(log) is True
+
+
+def _fake_run_group(calls: list[bool], log_text_when_online: str, crash_online: bool):
+    from tools.results import GroupResult
+
+    def fake(cfg_, group_, out_dir_, offline=False):
+        calls.append(offline)
+        raw = out_dir_ / "raw"
+        raw.mkdir(parents=True, exist_ok=True)
+        log = raw / f"group-{group_.index}.log"
+        result = GroupResult(
+            index=group_.index,
+            fhirVersion=group_.fhirVersion,
+            igs=list(group_.igs),
+            files=[str(p) for p in group_.files],
+        )
+        if offline or not crash_online:
+            log.write_text("done\n", encoding="utf-8")
+            result.exitCode = 0
+        else:
+            log.write_text(log_text_when_online, encoding="utf-8")
+            result.crashed = True
+            result.exitCode = 1
+            result.reason = "the validator exited with code 1 and produced no output file"
+        return result
+
+    return fake
+
+
+def test_terminology_crash_is_retried_then_validated_offline(
+    cfg, make_submission, monkeypatch, tmp_path: Path
+):
+    from tools import validator
+
+    make_submission()
+    submissions = discover(cfg)
+    load_all(cfg, submissions)
+    group = build_groups(cfg, submissions)[0]
+    calls: list[bool] = []
+    monkeypatch.setattr(
+        validator,
+        "run_group",
+        _fake_run_group(calls, "Unable to connect to terminology server at x\n", True),
+    )
+    monkeypatch.setattr(validator, "_sleep", lambda seconds: None)
+
+    result = validator.run_group_with_retries(cfg, group, tmp_path / "results")
+
+    # first attempt + retries from the config + one offline run
+    assert calls == [False] * (1 + cfg.terminology.retries) + [True]
+    assert result.crashed is False
+    assert result.terminologyFallback is True
+    assert result.attempts == len(calls)
+    kept = sorted(p.name for p in (tmp_path / "results" / "raw").glob("group-1.attempt-*.log"))
+    assert kept == [f"group-1.attempt-{n}.log" for n in range(1, len(calls))]
+
+
+def test_other_crashes_are_not_retried(cfg, make_submission, monkeypatch, tmp_path: Path):
+    from tools import validator
+
+    make_submission()
+    submissions = discover(cfg)
+    load_all(cfg, submissions)
+    group = build_groups(cfg, submissions)[0]
+    calls: list[bool] = []
+    monkeypatch.setattr(
+        validator, "run_group", _fake_run_group(calls, "java.lang.OutOfMemoryError\n", True)
+    )
+    monkeypatch.setattr(validator, "_sleep", lambda seconds: None)
+
+    result = validator.run_group_with_retries(cfg, group, tmp_path / "results")
+
+    assert calls == [False]
+    assert result.crashed is True
+    assert result.terminologyFallback is False
+    assert result.attempts == 1
+
+
+def test_no_offline_fallback_when_disabled(cfg, make_submission, monkeypatch, tmp_path: Path):
+    import dataclasses
+
+    from tools import validator
+
+    cfg = dataclasses.replace(
+        cfg, terminology=dataclasses.replace(cfg.terminology, fallbackToOffline=False)
+    )
+    make_submission()
+    submissions = discover(cfg)
+    load_all(cfg, submissions)
+    group = build_groups(cfg, submissions)[0]
+    calls: list[bool] = []
+    monkeypatch.setattr(
+        validator,
+        "run_group",
+        _fake_run_group(calls, "Error fetching the server's capability statement: timeout\n", True),
+    )
+    monkeypatch.setattr(validator, "_sleep", lambda seconds: None)
+
+    result = validator.run_group_with_retries(cfg, group, tmp_path / "results")
+
+    assert calls == [False] * (1 + cfg.terminology.retries)
+    assert result.crashed is True
+    assert result.terminologyFallback is False

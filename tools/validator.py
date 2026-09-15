@@ -196,6 +196,82 @@ def run_group(cfg: Config, group: Group, out_dir: Path, offline: bool = False) -
     return result
 
 
+# Log fragments that identify "the terminology server did not answer" crashes.
+TERMINOLOGY_FAILURE_MARKERS = (
+    "Unable to connect to terminology server",
+    "Error fetching the server's capability statement",
+    "TerminologyServiceException",
+)
+RETRY_DELAY_SECONDS = 15
+_sleep = time.sleep  # replaced in tests
+
+
+def terminology_failure(log_path: Path) -> bool:
+    """True when the validator log says the terminology server was unreachable."""
+    try:
+        text = log_path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return any(marker in text for marker in TERMINOLOGY_FAILURE_MARKERS)
+
+
+def _keep_attempt_log(log_path: Path, attempt: int) -> None:
+    """Preserve the log of a failed attempt next to the final one."""
+    if log_path.is_file():
+        log_path.replace(log_path.with_name(f"{log_path.stem}.attempt-{attempt}.log"))
+
+
+def run_group_with_retries(
+    cfg: Config, group: Group, out_dir: Path, offline: bool = False
+) -> GroupResult:
+    """run_group, repeated when the terminology server is why it crashed.
+
+    tx.fhir.org times out now and then. Such a crash is retried
+    cfg.terminology.retries times; if the server still does not answer and
+    cfg.terminology.fallbackToOffline is set, the group is validated once more
+    with -tx n/a and marked, so that every report can say that terminology
+    checks were skipped. Any other crash is returned as is.
+    """
+    log_path = out_dir / "raw" / f"group-{group.index}.log"
+    result = run_group(cfg, group, out_dir, offline=offline)
+    attempts = 1
+    while (
+        result.crashed
+        and not offline
+        and attempts <= cfg.terminology.retries
+        and terminology_failure(log_path)
+    ):
+        _keep_attempt_log(log_path, attempts)
+        delay = RETRY_DELAY_SECONDS * attempts
+        print(
+            f"group {group.index}: terminology server unreachable, retrying in {delay}s "
+            f"(retry {attempts} of {cfg.terminology.retries})",
+            file=sys.stderr,
+            flush=True,
+        )
+        _sleep(delay)
+        result = run_group(cfg, group, out_dir, offline=offline)
+        attempts += 1
+    if (
+        result.crashed
+        and not offline
+        and cfg.terminology.fallbackToOffline
+        and terminology_failure(log_path)
+    ):
+        _keep_attempt_log(log_path, attempts)
+        print(
+            f"group {group.index}: terminology server unreachable after {attempts} attempt(s); "
+            "validating without terminology services (-tx n/a)",
+            file=sys.stderr,
+            flush=True,
+        )
+        result = run_group(cfg, group, out_dir, offline=True)
+        attempts += 1
+        result.terminologyFallback = True
+    result.attempts = attempts
+    return result
+
+
 def tail(path: Path, lines: int) -> list[str]:
     if not path.is_file():
         return []
@@ -384,7 +460,7 @@ def run_validation(
     infrastructure: list[Issue] = []
 
     for group in groups:
-        group_result = run_group(cfg, group, out_dir, offline=offline)
+        group_result = run_group_with_retries(cfg, group, out_dir, offline=offline)
         run.groups.append(group_result)
         if group_result.crashed:
             run.crashed = True
@@ -455,6 +531,18 @@ def run_validation(
 
     run.submissions.sort(key=lambda s: s.id)
     run.biomarkers = biomarkers_mod.build_index(run)
+    fallback_groups = [g.index for g in run.groups if g.terminologyFallback]
+    if fallback_groups:
+        run.terminologyFallback = True
+        run.terminology = (
+            f"{cfg.terminology.server} unreachable; {len(fallback_groups)} of {len(run.groups)} "
+            "group(s) validated without terminology services"
+        )
+        print(
+            "warning: terminology server unreachable; validated without terminology services "
+            f"(group(s) {', '.join(map(str, fallback_groups))})",
+            file=sys.stderr,
+        )
     if infrastructure:
         print(
             f"warning: {len(infrastructure)} validator issue(s) could not be attributed to a file",

@@ -189,6 +189,11 @@ class GroupResult:
     reason: str = ""
     logTail: list[str] = field(default_factory=list)
     command: list[str] = field(default_factory=list)
+    # How many validator invocations this group needed (1 = no retry).
+    attempts: int = 1
+    # True when the terminology server was unreachable and the group was
+    # validated with -tx n/a instead.
+    terminologyFallback: bool = False
 
 
 @dataclass
@@ -201,6 +206,8 @@ class RunResult:
     defaultIgs: dict[str, list[str]] = field(default_factory=dict)
     scope: str = "all"
     crashed: bool = False
+    # True when at least one group ran without terminology services.
+    terminologyFallback: bool = False
     groups: list[GroupResult] = field(default_factory=list)
     submissions: list[SubmissionResult] = field(default_factory=list)
     biomarkers: list[dict[str, Any]] = field(default_factory=list)
