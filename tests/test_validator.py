@@ -276,3 +276,89 @@ def test_no_offline_fallback_when_disabled(cfg, make_submission, monkeypatch, tm
     assert calls == [False] * (1 + cfg.terminology.retries)
     assert result.crashed is True
     assert result.terminologyFallback is False
+
+
+# ------------------------------------------------------------- output streaming
+
+
+def _group_for(cfg, make_submission):
+    make_submission()
+    submissions = discover(cfg)
+    load_all(cfg, submissions)
+    return build_groups(cfg, submissions)[0]
+
+
+def _fake_validator(monkeypatch, script: str) -> None:
+    import sys
+
+    from tools import validator
+
+    monkeypatch.setattr(
+        validator,
+        "build_command",
+        lambda cfg_, group_, out_json, out_html, offline=False: [sys.executable, "-c", script],
+    )
+
+
+def test_run_group_streams_output_to_stdout_and_log(
+    cfg, make_submission, monkeypatch, tmp_path: Path, capsys
+):
+    from tools import validator
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    group = _group_for(cfg, make_submission)
+    _fake_validator(
+        monkeypatch,
+        "import sys; print('Loading'); print('  Loading FHIR v4.0.1'); "
+        "sys.stderr.write('stderr line\\n')",
+    )
+
+    result = validator.run_group(cfg, group, tmp_path / "results")
+
+    out = capsys.readouterr().out
+    assert "Loading FHIR v4.0.1" in out
+    assert "stderr line" in out
+    assert "::group::" not in out
+    log = (tmp_path / "results" / "raw" / "group-1.log").read_text(encoding="utf-8")
+    assert "Loading FHIR v4.0.1" in log
+    assert "stderr line" in log
+    assert result.exitCode == 0
+    assert result.crashed is True  # the fake wrote no output file
+    assert "produced no output file" in result.reason
+
+
+def test_run_group_wraps_output_in_a_group_on_github_actions(
+    cfg, make_submission, monkeypatch, tmp_path: Path, capsys
+):
+    from tools import validator
+
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    group = _group_for(cfg, make_submission)
+    _fake_validator(monkeypatch, "print('validator says hello')")
+
+    validator.run_group(cfg, group, tmp_path / "results")
+
+    lines = capsys.readouterr().out.splitlines()
+    assert "::group::validator output, group 1" in lines
+    assert lines.index("::group::validator output, group 1") < lines.index("validator says hello")
+    assert lines.index("validator says hello") < lines.index("::endgroup::")
+
+
+def test_run_group_kills_a_hanging_validator(cfg, make_submission, monkeypatch, tmp_path: Path):
+    import dataclasses
+
+    from tools import validator
+
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
+    cfg = dataclasses.replace(
+        cfg, validator=dataclasses.replace(cfg.validator, timeoutMinutes=0.02)
+    )  # 1.2 seconds
+    group = _group_for(cfg, make_submission)
+    _fake_validator(monkeypatch, "import time; print('started', flush=True); time.sleep(60)")
+
+    result = validator.run_group(cfg, group, tmp_path / "results")
+
+    assert result.crashed is True
+    assert "did not finish within" in result.reason
+    assert result.durationSeconds < 15
+    assert "started" in (tmp_path / "results" / "raw" / "group-1.log").read_text(encoding="utf-8")
