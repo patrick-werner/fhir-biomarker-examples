@@ -23,11 +23,10 @@ defect was observed in the wild at some point.
 | 1 | `status` is missing | The source system tracks result state in its own columns and never maps it. `Observation.status` is 1..1, so this is a cardinality error. |
 | 2 | `code.coding.system` is `"LOINC"` | The system field is filled with the name of the code system instead of its canonical URI `http://loinc.org`. FHIR requires an absolute URI. |
 | 3 | `effectiveDateTime` is `2025-01-20T07:40:00` | A local timestamp without an offset. FHIR requires a timezone as soon as a time is present, and a lot of exports drop it. |
-| 4 | `valueQuantity.code` is `mg/dl` | UCUM is case sensitive: the correct code is `mg/dL`. The `referenceRange` in the same resource gets it right, so the two do not even agree with each other. |
+| 4 | `valueQuantity.code` is `mg/deciliter` | The human-readable unit string is copied into `code`, which has to be a UCUM expression (`mg/dL`). The `referenceRange` in the same resource gets it right, so the two do not even agree with each other. |
 
 The resource also carries no `meta.profile`, so rating level 3 (validated
-against a profile) is out of reach by construction. That is not a detail: it is
-the reason defect 4 goes unreported.
+against a profile) is out of reach by construction.
 
 ## What the validator does and does not catch
 
@@ -36,12 +35,15 @@ and a timestamp without an offset. The relative system produces a second,
 softer finding as well, because a code system called `LOINC` cannot be looked
 up, so the code itself cannot be validated either.
 
-Defect 4 is **not** reported. Base R4 `Observation.value[x]` puts no required
-binding on `Quantity.code`, so nothing tells the validator that this field has
-to be a UCUM code, and an unbound code is never checked — with or without a
-terminology server. A profile such as the IPS laboratory observation does bind
-the unit, and a resource claiming it would fail. Since this example claims no
-profile, the wrong unit travels through validation untouched.
+Defect 4 depends on the terminology server. `Quantity.code` with the UCUM
+system is checked against UCUM, but that check runs on the terminology server:
+when it is reachable, `mg/deciliter` is reported as an invalid unit; in a run
+that had to fall back to `-tx n/a`, the validator only warns that the code
+could not be checked. The site and the pull request comment say which of the
+two happened.
+
+A note on case: `mg/dl` would **not** be a defect. UCUM accepts both `l` and
+`L` for litre, so the validator lets it pass, and rightly so.
 
 This is worth knowing when reading the rest of the collection: a green result
 means "nothing contradicted the profiles that were declared", not "the data is

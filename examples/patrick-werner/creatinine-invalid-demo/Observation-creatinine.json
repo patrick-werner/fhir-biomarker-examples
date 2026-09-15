@@ -35,9 +35,9 @@
   "effectiveDateTime": "2025-01-20T07:40:00",
   "valueQuantity": {
     "value": 1.1,
-    "unit": "mg/dl",
+    "unit": "mg/deciliter",
     "system": "http://unitsofmeasure.org",
-    "code": "mg/dl"
+    "code": "mg/deciliter"
   },
   "referenceRange": [
     {
