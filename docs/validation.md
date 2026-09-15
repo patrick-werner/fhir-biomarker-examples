@@ -162,6 +162,10 @@ means "nothing contradicted the declared profiles", not "the data is correct".
 
 ## Output
 
+The validator's own output is streamed into the step log while it runs, wrapped
+in a collapsible group per invocation on GitHub Actions, and kept verbatim in
+`results/raw/group-<n>.log`.
+
 ```
 results/
 ├── results.json                     the full run: submissions, files, issues, groups

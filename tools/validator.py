@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -145,7 +146,22 @@ def build_command(
     return command
 
 
+def _in_github_actions() -> bool:
+    return os.environ.get("GITHUB_ACTIONS") == "true"
+
+
+def _pump(stream, sinks) -> None:
+    """Copy every line of the validator's output to all sinks as it arrives."""
+    for line in stream:
+        for sink in sinks:
+            sink.write(line)
+            sink.flush()
+
+
 def run_group(cfg: Config, group: Group, out_dir: Path, offline: bool = False) -> GroupResult:
+    """One validator invocation. Its output goes to results/raw/group-<n>.log
+    and, line by line, to stdout, so that it is visible in a CI step log
+    (wrapped in a collapsible group on GitHub Actions)."""
     raw_dir = out_dir / "raw"
     raw_dir.mkdir(parents=True, exist_ok=True)
     out_json = raw_dir / f"group-{group.index}.json"
@@ -167,24 +183,47 @@ def run_group(cfg: Config, group: Group, out_dir: Path, offline: bool = False) -
     )
     started = time.monotonic()
     timeout = cfg.validator.timeoutMinutes * 60
-    print(f"validating group {group.index}: {len(group.files)} file(s), IGs {', '.join(group.igs) or 'none'}", flush=True)
+    mode = "without terminology services" if offline else "with terminology services"
+    print(
+        f"validating group {group.index}: {len(group.files)} file(s), "
+        f"IGs {', '.join(group.igs) or 'none'}, {mode}",
+        flush=True,
+    )
+    grouped = _in_github_actions()
+    if grouped:
+        print(f"::group::validator output, group {group.index}", flush=True)
     try:
         with log_path.open("w", encoding="utf-8") as log:
-            process = subprocess.run(
+            process = subprocess.Popen(
                 command,
-                stdout=log,
+                stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                timeout=timeout,
-                check=False,
                 cwd=cfg.root,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
             )
-        result.exitCode = process.returncode
-    except subprocess.TimeoutExpired:
-        result.crashed = True
-        result.reason = f"the validator did not finish within {cfg.validator.timeoutMinutes} minutes"
+            reader = threading.Thread(
+                target=_pump, args=(process.stdout, [log, sys.stdout]), daemon=True
+            )
+            reader.start()
+            try:
+                process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+                result.crashed = True
+                result.reason = (
+                    f"the validator did not finish within {cfg.validator.timeoutMinutes} minutes"
+                )
+            reader.join(timeout=10)
+            result.exitCode = process.returncode
     except OSError as exc:
         result.crashed = True
         result.reason = f"the validator could not be started: {exc}"
+    finally:
+        if grouped:
+            print("::endgroup::", flush=True)
     result.durationSeconds = round(time.monotonic() - started, 1)
     result.logTail = tail(log_path, LOG_TAIL_LINES)
 
