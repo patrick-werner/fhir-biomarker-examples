@@ -2,6 +2,9 @@
   "resourceType": "Observation",
   "id": "example-1",
   "meta": {
+    "profile": [
+      "http://hl7.org/fhir/uv/genomics-reporting/StructureDefinition/molecular-biomarker"
+    ],
     "security": [
       {
         "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
@@ -20,6 +23,14 @@
           "display": "Laboratory"
         }
       ]
+    },
+    {
+      "coding": [
+        {
+          "system": "http://hl7.org/fhir/uv/genomics-reporting/CodeSystem/tbd-codes-cs",
+          "code": "biomarker-category"
+        }
+      ]
     }
   ],
   "code": {
@@ -36,6 +47,12 @@
     "reference": "Patient/example-patient"
   },
   "effectiveDateTime": "2026-01-15T09:00:00+01:00",
+  "performer": [
+    {
+      "reference": "Organization/example-lab",
+      "display": "Example laboratory"
+    }
+  ],
   "valueQuantity": {
     "value": 5.4,
     "unit": "%",

@@ -15,6 +15,10 @@ Anything a reader should know about the modelling decisions: why a component was
 used instead of a separate Observation, which code system was chosen, how the
 unit is expressed, known deviations from a profile, and so on.
 
+Say which profile the resources claim in `meta.profile` and why, or that they
+claim none. The template claims the Genomics Reporting `molecular-biomarker`
+profile; replace it with the profile your system implements, or remove it.
+
 ## Files
 
 | File | Content |

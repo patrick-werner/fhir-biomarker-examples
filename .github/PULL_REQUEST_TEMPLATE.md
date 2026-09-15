@@ -11,6 +11,9 @@
       repository licence (Apache 2.0).
 - [ ] `metadata.yaml` has a `title` and an honest `origin`
       (`real-world`, `derived-from-real` or `synthetic`).
+- [ ] The resources declare the profile they are meant to conform to in
+      `meta.profile` (its package under `igs` if it is not a default), or the
+      README says that they claim none.
 - [ ] Optional: I ran `make check` locally.
 
 ## Notes for reviewers

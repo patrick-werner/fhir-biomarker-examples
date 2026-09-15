@@ -33,7 +33,10 @@ body:
     id: resource
     attributes:
       label: The example
-      description: One or more FHIR resources as JSON or XML.
+      description: >-
+        One or more FHIR resources as JSON or XML. If they are meant to conform
+        to a profile, declare it in meta.profile; the validator checks a resource
+        only against the profiles it declares.
       render: json
     validations:
       required: true
