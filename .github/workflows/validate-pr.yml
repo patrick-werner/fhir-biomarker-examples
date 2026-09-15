@@ -76,6 +76,9 @@ jobs:
           name: pr-context
           path: .ci/
           retention-days: 7
+          # .ci is a dot directory; upload-artifact skips hidden files by default.
+          include-hidden-files: true
+          if-no-files-found: error
 
   validate:
     name: FHIR validation
@@ -119,6 +122,8 @@ jobs:
             results/
             .ci/pr-comment.md
           retention-days: 14
+          include-hidden-files: true
+          if-no-files-found: error
 
       - name: Fail if the validator crashed
         if: steps.validate.outcome == 'failure'
