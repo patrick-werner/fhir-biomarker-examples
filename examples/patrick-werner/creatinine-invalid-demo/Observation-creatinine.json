@@ -1,0 +1,58 @@
+{
+  "resourceType": "Observation",
+  "id": "creatinine-invalid-demo",
+  "meta": {
+    "security": [
+      {
+        "system": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+        "code": "HTEST"
+      }
+    ]
+  },
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code": "laboratory"
+        }
+      ]
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "LOINC",
+        "code": "2160-0",
+        "display": "Creatinine [Mass/volume] in Serum or Plasma"
+      }
+    ],
+    "text": "Creatinine"
+  },
+  "subject": {
+    "reference": "Patient/example-patient-3"
+  },
+  "effectiveDateTime": "2025-01-20T07:40:00",
+  "valueQuantity": {
+    "value": 1.1,
+    "unit": "mg/deciliter",
+    "system": "http://unitsofmeasure.org",
+    "code": "mg/deciliter"
+  },
+  "referenceRange": [
+    {
+      "low": {
+        "value": 0.6,
+        "unit": "mg/dL",
+        "system": "http://unitsofmeasure.org",
+        "code": "mg/dL"
+      },
+      "high": {
+        "value": 1.2,
+        "unit": "mg/dL",
+        "system": "http://unitsofmeasure.org",
+        "code": "mg/dL"
+      }
+    }
+  ]
+}

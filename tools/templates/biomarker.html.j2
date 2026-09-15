@@ -1,0 +1,58 @@
+{% extends "base.html.j2" %}
+{% block title %}{{ biomarker.name }} · Biomarkers{% endblock %}
+{% block content %}
+<nav class="crumbs">
+  <a href="{{ base }}index.html">Collection</a> /
+  <a href="{{ base }}biomarkers/index.html">Biomarkers</a> /
+  <code>{{ biomarker.code }}</code>
+</nav>
+
+<h1>{{ biomarker.name }}</h1>
+<p class="lede">
+  <code>{{ biomarker.system or "(no system)" }}</code> · <code>{{ biomarker.code }}</code>
+  — {{ biomarker.occurrenceCount }} occurrence(s) in {{ biomarker.submissionCount }} submission(s).
+</p>
+
+<p>
+  Each row is one <code>Observation</code> that carries this code. Reading across
+  the columns shows where implementations agree and where they do not.
+</p>
+
+<div class="scroll-x">
+<table class="comparison">
+  <thead>
+    <tr>
+      <th>Submission</th><th>Resource</th><th>Profiles</th><th>Value</th>
+      <th>Unit</th><th>Components</th><th>Categories</th><th>Interpretation</th>
+      <th>Reference range</th><th>Method</th><th>Specimen</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for occurrence in biomarker.occurrences %}
+    <tr>
+      <td>
+        <a href="{{ base }}submissions/{{ occurrence.submission }}/index.html">{{ occurrence.title }}</a>
+        <br><code class="small muted">{{ occurrence.file }}</code>
+      </td>
+      <td>{{ occurrence.resourceType }}{% if occurrence.resourceId %} <code class="small">{{ occurrence.resourceId }}</code>{% endif %}</td>
+      <td>
+        {% for profile in occurrence.profiles %}<code class="small">{{ profile.split('/')[-1] }}</code><br>{% else %}<span class="muted">none</span>{% endfor %}
+      </td>
+      <td>{{ occurrence.valueType or "–" }}{% if occurrence.valueText %}<br><span class="muted small">{{ occurrence.valueText }}</span>{% endif %}</td>
+      <td>{{ occurrence.unit or "–" }}</td>
+      <td>
+        {% for code in occurrence.componentCodes %}<code class="small">{{ code }}</code><br>{% else %}<span class="muted">–</span>{% endfor %}
+      </td>
+      <td>
+        {% for code in occurrence.categoryCodes %}<code class="small">{{ code }}</code><br>{% else %}<span class="muted">–</span>{% endfor %}
+      </td>
+      <td>{{ "yes" if occurrence.hasInterpretation else "no" }}</td>
+      <td>{{ "yes" if occurrence.hasReferenceRange else "no" }}</td>
+      <td>{{ occurrence.method or "–" }}</td>
+      <td>{{ occurrence.specimen or "–" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

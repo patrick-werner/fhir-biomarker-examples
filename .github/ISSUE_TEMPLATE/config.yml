@@ -1,0 +1,10 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Discuss on FHIR Zulip
+    url: https://chat.fhir.org/
+    about: >-
+      Questions about how a biomarker should be represented are best discussed in
+      the Genomics, Orders & Observations or Implementers streams.
+  - name: Contribute an example yourself
+    url: https://github.com/patrick-werner/fhir-biomarker-examples/blob/main/CONTRIBUTING.md
+    about: A pull request needs two metadata fields and one FHIR file.

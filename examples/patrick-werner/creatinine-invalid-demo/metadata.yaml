@@ -1,0 +1,12 @@
+title: Creatinine result with typical real-world mistakes (deliberately invalid)
+origin: synthetic
+category: lab
+description: >-
+  Reference case for the validation pipeline: four defects that occur again and
+  again in production data, plus a demonstration of the knownIssues mechanism.
+knownIssues:
+  - messageId: Validation_VAL_Profile_Minimum
+    location: "Observation"
+    justification: >-
+      Demonstration of the suppression mechanism: the (fictional) source system
+      never populates Observation.status.

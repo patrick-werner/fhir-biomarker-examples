@@ -1,0 +1,7 @@
+title: HER2 immunohistochemistry status as Genomics Reporting molecular biomarker
+origin: synthetic
+category: genomic
+biomarkers:
+  - name: HER2
+    system: http://www.genenames.org
+    code: "HGNC:3430"

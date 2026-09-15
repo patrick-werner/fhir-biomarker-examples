@@ -1,5 +1,9 @@
 # FHIR Biomarker Examples Repository
 
+[![Validation status](https://img.shields.io/endpoint?url=https%3A%2F%2Fpatrick-werner.github.io%2Ffhir-biomarker-examples%2Fbadge.json)](https://patrick-werner.github.io/fhir-biomarker-examples/)
+
+**Browse the collection: <https://patrick-werner.github.io/fhir-biomarker-examples/>**
+
 ## Overview
 
 This repository collects real-world example data of **biomarker representations in FHIR**.
@@ -43,49 +47,74 @@ For the purposes of this repository, a biomarker is:
 
 ## Repository Structure
 
+Examples never move. Every submission stays where its contributor put it, and
+its status is computed by CI and published on the site.
+
 ```
-/input/
-  <submission-id>/
-    README.md
-    example.json
-
-/validated/
-  <example-id>/
-    README.md
-    example.json
+examples/
+  <contributor-slug>/
+    contributor.yaml              name: …          (the only required field)
+    <submission-slug>/
+      metadata.yaml               title: …  origin: …   (the only required fields)
+      README.md                   context, origin, modelling notes
+      Observation-*.json|xml      one or more FHIR resources
 ```
 
-### Input
-- Raw submissions from the community
-- May be incomplete or non-conformant
-- Each submission should include a README and a named custodian
+Supporting parts of the repository:
 
-### Validated
-- Reviewed by subject matter experts (SMEs)
-- May include:
-  - Profile validation results
-  - Improved or normalized versions
-  - Notes on interpretation
+| Path | What it is |
+|---|---|
+| `validation.config.yaml` | The single source of truth: validator version, implementation guides, limits. |
+| `schema/` | JSON Schemas for `metadata.yaml` and `contributor.yaml`. |
+| `tools/` | The Python tooling behind every CI step; runs locally the same way. |
+| `docs/` | [How validation works](docs/validation.md), [metadata reference](docs/metadata-reference.md). |
+| `examples/_template/` | Copy this to start a submission. |
+
+---
+
+## Validation
+
+Every pull request gets an automated report, and the whole collection is
+revalidated on `main` and once a week.
+
+- **Structural checks block a merge**: files must be parseable and sit in the
+  layout above, and `metadata.yaml` needs `title` and `origin`.
+- **FHIR validation never blocks a merge.** The HL7 Java validator runs against
+  a pinned version and a fixed set of implementation guides, and its findings
+  are published as information about the example.
+
+That distinction is deliberate: a collection of real-world data contains invalid
+data, so `main` is never red because an example has errors — only when the
+infrastructure breaks.
+
+Details: [`docs/validation.md`](docs/validation.md).
 
 ---
 
 ## Submission Guidelines
 
-We intentionally keep submission simple.
+We intentionally keep submission simple. Step by step:
+[**CONTRIBUTING.md**](CONTRIBUTING.md).
 
 You can contribute by:
 - Opening a Pull Request
+- Opening an [issue with the submission form](https://github.com/patrick-werner/fhir-biomarker-examples/issues/new?template=submit-example.yml)
 - Sharing examples via Zulip or email (maintainers will add them)
 - Contributing during HL7 Connectathons
 
 ### Minimal Requirements
 
-Each submission should include:
+Each submission needs:
 - Example file(s) (JSON or XML)
-- A short `README.md` describing:
-  - Context / use case
-  - Origin (vendor, project, synthetic, etc.)
-  - Contact person (custodian)
+- `metadata.yaml` with exactly two fields: `title` and `origin`
+
+Strongly encouraged, but not enforced — a short `README.md` describing:
+- Context / use case
+- Origin (vendor, project, synthetic, etc.)
+- The modelling decisions worth discussing
+
+The custodian defaults to your `contributor.yaml`, the biomarker codes are read
+out of `Observation.code`, and the submission date comes from the git history.
 
 ### Important Notes
 
@@ -97,12 +126,16 @@ Each submission should include:
 
 ## Evaluation & Quality Indicators
 
-We plan to introduce a **lightweight rating system** to help users understand example quality, e.g.:
+A **lightweight rating system** helps users understand example quality:
 
-- ⭐ Real-world example
-- ⭐⭐ Reviewed by SME
-- ⭐⭐⭐ Validated against profile
-- ⭐⭐⭐⭐ Consensus example
+- ⭐ Real-world example — `origin` is `real-world` or `derived-from-real`
+- ⭐⭐ Reviewed by SME — set by a maintainer after review
+- ⭐⭐⭐ Validated against profile — computed by CI: every observation declares
+  `meta.profile` and validation produced no unsuppressed errors
+- ⭐⭐⭐⭐ Consensus example — the community agreed this is how it should be done
+
+A submission shows the **highest level it has reached**; the levels are not
+cumulative requirements. Level 3 is the only one awarded automatically.
 
 This system is **informational only** and does not block submissions.
 
@@ -155,9 +188,14 @@ FHIR Genomics Reporting:
 
 - Define clearer biomarker taxonomy
 - Align with HL7 Genomics Reporting IG glossary
-- Integrate automated validation (FHIR Validator)
 - Provide rendered views of examples (via IG / viewer)
 - Highlight consensus examples per use case
+
+Already in place: automated validation with the HL7 FHIR validator, per-code
+[comparison pages](https://patrick-werner.github.io/fhir-biomarker-examples/biomarkers/index.html)
+that put different representations of the same biomarker side by side, and a
+machine-readable
+[`results.json`](https://patrick-werner.github.io/fhir-biomarker-examples/results.json).
 
 ---
 
