@@ -12,7 +12,8 @@ origin: synthetic # real-world | derived-from-real | synthetic
 # FHIR version of the example files. Default: 4.0.1
 # fhirVersion: "4.0.1"
 
-# Extra implementation guides on top of the defaults for this FHIR version.
+# Extra implementation guides on top of the defaults for this FHIR version:
+# the package of every profile your resources declare in meta.profile.
 # Always pin a version; #current, #dev and #latest are rejected.
 # igs:
 #   - hl7.fhir.eu.laboratory#2.0.0

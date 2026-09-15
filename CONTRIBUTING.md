@@ -80,6 +80,16 @@ Good submissions:
 You may submit a single `Observation`, a panel, a `DiagnosticReport` with
 results, or a full `Bundle`.
 
+**Declare the profile your system claims.** Put it into `meta.profile` of every
+resource that is meant to conform to something, for example
+`http://hl7.org/fhir/uv/genomics-reporting/StructureDefinition/molecular-biomarker`.
+The validator checks a resource only against the profiles it declares; without
+one it checks base FHIR alone, which says nothing about the representation you
+actually implemented, and rating level 3 stays out of reach. If the profile's
+package is not one of the defaults, add it under `igs` in `metadata.yaml` (see
+below). Claiming no profile is fine as well: say so in the README, and the
+example is checked against base FHIR.
+
 ## Practical notes
 
 **References between files are not resolved.** Each file is validated on its own,
