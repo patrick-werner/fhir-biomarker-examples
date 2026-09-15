@@ -29,7 +29,6 @@ defaultFhirVersion: "4.0.1"
 # Keep this list small; submissions add their own via metadata.igs.
 defaultIgs:
   "4.0.1":
-    - hl7.fhir.uv.ips#2.0.1
     - hl7.fhir.uv.genomics-reporting#3.0.0
   "4.3.0": []
   "5.0.0": []

@@ -134,7 +134,7 @@ def test_grouping_and_command(cfg, make_submission):
     assert command[0] == "java"
     assert "-Xmx4g" in command
     assert command[command.index("-version") + 1] == "4.0.1"
-    assert "hl7.fhir.uv.ips#2.0.1" in command
+    assert "hl7.fhir.uv.genomics-reporting#3.0.0" in command
     assert command[command.index("-tx") + 1] == "https://tx.fhir.org"
     assert "-show-message-ids" in command
     assert command[-1].startswith("/")  # absolute source paths

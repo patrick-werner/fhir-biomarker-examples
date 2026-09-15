@@ -33,7 +33,7 @@ def test_defaults_are_applied(cfg, make_submission):
     assert resolved.fhirVersion == "4.0.1"
     assert resolved.category == "other"
     assert resolved.custodian["name"] == "Some One"
-    assert resolved.igs == ("hl7.fhir.uv.genomics-reporting#3.0.0", "hl7.fhir.uv.ips#2.0.1")
+    assert resolved.igs == ("hl7.fhir.uv.genomics-reporting#3.0.0",)
 
 
 def test_biomarkers_are_derived_from_the_resource(cfg, make_submission):
@@ -69,7 +69,12 @@ def test_custodian_overrides_the_contributor(cfg, make_submission):
 
 def test_effective_igs_merge_and_deduplicate(cfg, make_submission):
     make_submission(
-        metadata="title: T\norigin: synthetic\nigs:\n  - hl7.fhir.uv.ips#2.0.1\n  - hl7.fhir.eu.laboratory#2.0.0\n"
+        metadata=(
+            "title: T\norigin: synthetic\nigs:\n"
+            "  - hl7.fhir.uv.ips#2.0.1\n"
+            "  - hl7.fhir.uv.genomics-reporting#3.0.0\n"  # already a default
+            "  - hl7.fhir.eu.laboratory#2.0.0\n"
+        )
     )
     submissions = discover(cfg)
     load_all(cfg, submissions)
