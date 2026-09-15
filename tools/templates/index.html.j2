@@ -1,0 +1,86 @@
+{% extends "base.html.j2" %}
+{% block content %}
+<h1>FHIR biomarker examples</h1>
+
+<p class="lede">
+  Real-world and synthetic representations of biomarkers in FHIR, validated
+  automatically so that you can see what each example actually is.
+</p>
+
+<ul class="totals">
+  {% for status in statuses %}
+  <li class="total total-{{ status }}">
+    <span class="count">{{ totals[status] }}</span>
+    <span class="label">{{ status | status_icon }} {{ status | status_label }}</span>
+  </li>
+  {% endfor %}
+  <li class="total">
+    <span class="count">{{ run.biomarkers | length }}</span>
+    <span class="label">biomarker codes</span>
+  </li>
+</ul>
+
+<p class="filter-row">
+  <label for="filter">Filter</label>
+  <input id="filter" type="search" data-filter-target=".submission-table"
+         placeholder="submission, contributor, biomarker, code…" autocomplete="off">
+</p>
+
+{% for status in statuses %}
+{% set group = run.submissions | selectattr("status", "equalto", status) | list %}
+{% if group %}
+<section class="status-group" id="status-{{ status }}">
+  <h2>{{ status | status_icon }} {{ status | status_label }} <span class="muted">({{ group | length }})</span></h2>
+  {% if status == "not-validated" %}
+  <p class="muted">
+    The validator could not produce a result for these files. That is an
+    infrastructure problem, not a statement about the examples.
+  </p>
+  {% endif %}
+  <table class="submission-table">
+    <thead>
+      <tr>
+        <th>Submission</th><th>Contributor</th><th>Category</th><th>FHIR</th>
+        <th>Rating</th><th class="num">E</th><th class="num">W</th>
+        <th class="num">I</th><th class="num">Suppressed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for submission in group %}
+      <tr data-search="{{ submission.id }} {{ submission.title }} {{ submission.category }}
+          {% for biomarker in submission.biomarkers %}{{ biomarker.name }} {{ biomarker.code }} {% endfor %}">
+        <td>
+          <a href="{{ base }}submissions/{{ submission.contributor }}/{{ submission.slug }}/index.html">{{ submission.title }}</a>
+          <br><code class="muted">{{ submission.id }}</code>
+        </td>
+        <td>{{ submission.custodian.name or submission.contributor }}</td>
+        <td>{{ submission.category }}</td>
+        <td>{{ submission.fhirVersion }}</td>
+        <td title="{{ submission.starReasons | join(' · ') }}">{{ submission.stars | stars }}</td>
+        <td class="num">{{ submission.counts.errors }}</td>
+        <td class="num">{{ submission.counts.warnings }}</td>
+        <td class="num">{{ submission.counts.information }}</td>
+        <td class="num">{{ submission.counts.suppressed }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endfor %}
+
+{% if not run.submissions %}
+<p>No submissions yet. <a href="{{ repo_url }}/blob/main/CONTRIBUTING.md">Add the first one.</a></p>
+{% endif %}
+
+<section class="rating-key">
+  <h2>What the rating means</h2>
+  <p>A submission shows the highest level it has reached; the levels are not cumulative requirements.</p>
+  <ul>
+    <li><strong>★</strong> Real-world example — it came out of a running system.</li>
+    <li><strong>★★</strong> Reviewed by a subject matter expert.</li>
+    <li><strong>★★★</strong> Validated against the profile it declares — computed by CI, no unsuppressed errors.</li>
+    <li><strong>★★★★</strong> Consensus example — the community agreed this is how it should be done.</li>
+  </ul>
+</section>
+{% endblock %}

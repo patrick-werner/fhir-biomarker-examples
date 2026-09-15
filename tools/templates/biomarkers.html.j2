@@ -1,0 +1,34 @@
+{% extends "base.html.j2" %}
+{% block title %}Biomarkers · {{ site_title }}{% endblock %}
+{% block content %}
+<h1>Biomarkers</h1>
+<p class="lede">
+  Every code that appears in an <code>Observation.code</code> across the whole
+  collection. Follow a code to see the different ways it has been represented.
+</p>
+
+<p class="filter-row">
+  <label for="filter">Filter</label>
+  <input id="filter" type="search" data-filter-target=".biomarker-table"
+         placeholder="name, code, system…" autocomplete="off">
+</p>
+
+<table class="biomarker-table">
+  <thead>
+    <tr><th>Biomarker</th><th>System</th><th>Code</th><th class="num">Submissions</th><th class="num">Occurrences</th></tr>
+  </thead>
+  <tbody>
+    {% for entry in run.biomarkers %}
+    <tr data-search="{{ entry.name }} {{ entry.code }} {{ entry.system }} {{ entry.systemLabel }}">
+      <td><a href="{{ entry.slug }}.html">{{ entry.name }}</a></td>
+      <td>{{ entry.systemLabel }}</td>
+      <td><code>{{ entry.code }}</code></td>
+      <td class="num">{{ entry.submissionCount }}</td>
+      <td class="num">{{ entry.occurrenceCount }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5" class="muted">No biomarker codes found yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
