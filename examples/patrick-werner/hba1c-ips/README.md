@@ -20,6 +20,9 @@ so the resource is recognisable as test data wherever it travels.
   `Observation-results-laboratory-pathology-uv-ips`, which requires `subject`,
   `effective[x]`, at least one `performer` and the `laboratory` category slice.
   All four are present, so the example reaches rating level 3.
+- IPS is not one of the collection's default implementation guides, so
+  `metadata.yaml` lists `hl7.fhir.uv.ips#2.0.1` under `igs`. That is all it
+  takes for the validator to resolve the profile.
 - The value is a `Quantity` with `system` `http://unitsofmeasure.org` and the
   UCUM code `%`. Note that `%` for HbA1c is the DCCT/NGSP convention; the IFCC
   convention would use `mmol/mol`. Both are found in the wild, which is exactly

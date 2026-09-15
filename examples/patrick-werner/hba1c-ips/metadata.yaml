@@ -1,3 +1,7 @@
 title: HbA1c result as IPS laboratory observation
 origin: synthetic
 category: lab
+# The IPS package is not a default of this collection; the example declares
+# the IPS laboratory profile, so it brings the package itself.
+igs:
+  - hl7.fhir.uv.ips#2.0.1

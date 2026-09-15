@@ -1,4 +1,4 @@
-# How validation works
+wird# How validation works
 
 Everything CI does is a `python -m tools …` call, so every step can be
 reproduced locally with the same command. The workflows contain no logic beyond
@@ -53,7 +53,7 @@ invocation:
 ```
 java -Xmx4g -Dfile.encoding=UTF-8 -jar .cache/validator/validator_cli-6.10.4.jar \
   -version 4.0.1 \
-  -ig hl7.fhir.uv.genomics-reporting#3.0.0 -ig hl7.fhir.uv.ips#2.0.1 \
+  -ig hl7.fhir.uv.genomics-reporting#3.0.0 \
   -tx https://tx.fhir.org -txCache .cache/txcache \
   -output results/raw/group-1.json -html-output results/raw/group-1.html \
   -show-message-ids -allow-example-urls true -extension any \

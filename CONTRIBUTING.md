@@ -95,7 +95,7 @@ igs:
   - hl7.fhir.eu.laboratory#2.0.0
 ```
 
-The defaults (IPS and Genomics Reporting for R4) are always loaded on top of
+The default (Genomics Reporting for R4) is always loaded on top of
 this. Submissions with the same FHIR version and the same IG set are validated
 in one validator run.
 
