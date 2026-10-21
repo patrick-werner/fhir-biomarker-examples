@@ -1,0 +1,24 @@
+title: Tumor mutation burden (250) — Genomics Reporting IG example
+origin: synthetic
+description: >-
+  Tumor mutation burden result, 250 mutations per megabase, as published in the HL7 FHIR Genomics Reporting IG, claiming the
+  molecular-biomarker profile.
+fhirVersion: "4.0.1"
+category: genomic
+biomarkers:
+  - name: TMB
+    system: http://loinc.org
+    code: "94076-7"
+source:
+  vendor: HL7 International
+  project: HL7 FHIR Genomics Reporting IG 3.0.0
+  url: https://hl7.org/fhir/uv/genomics-reporting/STU3/Observation-TumorMutationBurdenExample01.html
+
+# No 'igs': hl7.fhir.uv.genomics-reporting#3.0.0 is loaded by default.
+# No 'custodian': defaults to contributor.yaml.
+
+# Add once the pull request comment shows findings you accept, e.g.
+# knownIssues:
+#   - messageId: <id from the report>
+#     file: tmb-example01-genomics-reporting-ig.json
+#     justification: <why this finding is expected>
